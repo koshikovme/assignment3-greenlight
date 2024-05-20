@@ -5,29 +5,38 @@ import (
 	"testing"
 )
 
-// TestHealthcheck tests ping handler for the correct response status code, 200 and
-// the correct response body, "OK".
-func TestHealthcheck(t *testing.T) {
-	app := newTestApp()
-	ts := newTestServer(app.routes())
-	defer ts.Close()
-
-	code, _, body := ts.get(t, "/v1/healthcheck")
-
-	if code != http.StatusOK {
-		t.Errorf("want %d; got %d", http.StatusOK, code)
-	}
-
-	expResp := `{
-	"status": "available",
-	"system_info": {
-		"environment": "testing",
-		"version": "1.0.0"
-	}
+type healthCheckResponse struct {
+	Status     string            `json:"status"`
+	SystemInfo map[string]string `json:"system_info"`
 }
-`
 
-	if string(body) != expResp {
-		t.Errorf("want body to equal %q,\n but got %q", expResp, string(body))
+func TestHealthcheckHandler(t *testing.T) {
+	want := healthCheckResponse{
+		Status: "available",
+		SystemInfo: map[string]string{
+			"environment": "development",
+			"version":     version,
+		},
 	}
+
+	requestUrlPath := "/v1/healthcheck"
+
+	validResponseTC := handlerTestcase{
+		name:                   "Valid response",
+		requestMethodType:      http.MethodGet,
+		requestUrlPath:         requestUrlPath,
+		wantResponseStatusCode: http.StatusOK,
+		wantResponse:           want,
+	}
+
+	methodNotAllowedTC := handlerTestcase{
+		name:                   "Method not allowed",
+		requestMethodType:      http.MethodPost,
+		requestUrlPath:         requestUrlPath,
+		wantResponseStatusCode: http.StatusMethodNotAllowed,
+	}
+
+	ts := newTestServer(t)
+	testHandler(t, ts, validResponseTC)
+	testHandler(t, ts, methodNotAllowedTC)
 }

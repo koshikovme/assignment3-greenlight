@@ -1,0 +1,41 @@
+### Health Check
+GET localhost:4000/v1/healthcheck
+
+### Create Movie
+POST localhost:4000/v1/movies
+Content-Type: application/json
+
+{"title":"Black Panther","year":2018,"runtime":"134 mins","genres":["sci-fi", "action", "adventure"]}
+
+### Show Movie
+GET localhost:4000/v1/movies/1
+
+### Update Movie
+PATCH localhost:4000/v1/movies/1
+Content-Type: application/json
+
+{"genres": ["Romance"]}
+
+### List Movies
+GET localhost:4000/v1/movies
+
+### Delete Movie
+DELETE localhost:4000/v1/movies/1
+
+### Register User
+POST localhost:4000/v1/users
+Content-Type: application/json
+
+{"name":"Alice", "email":"alice@example.com", "password":"pa55word"}
+
+### Activate a specific user
+PUT localhost:4000/v1/users/activated
+Content-Type: application/json
+
+{"token":"H2NMasdasdasnfjadhskjlfjhs"}
+
+### Get Authentication token for user
+POST localhost:4000/v1/tokens/authentication
+Content-Type: application/json
+
+{"email":"alice@example.com", "password":"pa55word"}

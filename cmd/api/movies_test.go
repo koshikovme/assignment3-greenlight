@@ -1,264 +1,581 @@
 package main
 
 import (
-	"bytes"
-	"database/sql"
-	"encoding/json"
+	"math"
 	"net/http"
-	"net/http/httptest"
-	"os"
-	"strconv"
 	"testing"
-
-	_ "github.com/go-sql-driver/mysql" // MySQL driver import
-	"github.com/koshikovme/assignment3-greenlight/internal/data"
-	"github.com/koshikovme/assignment3-greenlight/internal/jsonlog"
-	"github.com/koshikovme/assignment3-greenlight/internal/mailer"
 )
 
-// setupTestDB initializes a new test database connection.
-func setupTestDB2(t *testing.T) *sql.DB {
-	t.Helper()
-
-	// Connect to the test database.
-	db, err := sql.Open("mysql", "admin:1234@tcp(localhost:3306)/electronicsstore")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Clean the database before running tests.
-	_, err = db.Exec("TRUNCATE TABLE movies")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return db
+type movie struct {
+	ID      int      `json:"id"`
+	Title   string   `json:"title"`
+	Year    int      `json:"year"`
+	Runtime string   `json:"runtime"`
+	Genres  []string `json:"genres"`
+	Version int      `json:"version"`
 }
 
-// newTestApplication creates a new application struct with mocked dependencies for testing.
-func newTestApplication2(t *testing.T) *application {
-	t.Helper()
+type movieResponse struct {
+	Movie movie `json:"movie"`
+}
 
-	db := setupTestDB2(t)
+type paginationMetadata struct {
+	CurrentPage  int `json:"current_page"`
+	PageSize     int `json:"page_size"`
+	TotalRecords int `json:"total_records"`
+	LastPage     int `json:"last_page"`
+	FirstPage    int `json:"first_page"`
+}
 
-	logger := jsonlog.NewLogger(os.Stdout, jsonlog.LevelInfo)
+type listMovieResponse struct {
+	Movies             []movie            `json:"movies"`
+	PaginationMetadata paginationMetadata `json:"metadata"`
+}
 
-	return &application{
-		config: config{},
-		logger: logger,
-		models: data.NewModels(db),
-		mailer: mailer.Mailer{},
+var notFoundResponse = map[string]string{
+	"error": "the requested resource could not be found",
+}
+
+func newPaginationMetadata(currentPage, pageSize, totalRecords int) paginationMetadata {
+	return paginationMetadata{
+		CurrentPage:  currentPage,
+		PageSize:     pageSize,
+		TotalRecords: totalRecords,
+		LastPage:     int(math.Ceil(float64(totalRecords) / float64(pageSize))),
+		FirstPage:    1,
 	}
 }
 
-// TestCreateMovieHandler tests the createMovieHandler.
 func TestCreateMovieHandler(t *testing.T) {
-	app := newTestApplication2(t)
-
-	movie := map[string]interface{}{
-		"title":   "Test Movie",
-		"year":    2023,
-		"runtime": 120,
-		"genres":  []string{"Drama"},
-	}
-
-	body, err := json.Marshal(movie)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	req := httptest.NewRequest(http.MethodPost, "/v1/movies", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(app.createMovieHandler)
-	handler.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusCreated {
-		t.Errorf("expected status 201 Created but got %d", rr.Code)
-	}
-
-	var response map[string]interface{}
-	err = json.NewDecoder(rr.Body).Decode(&response)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if response["movie"].(map[string]interface{})["title"] != "Test Movie" {
-		t.Errorf("expected title to be 'Test Movie' but got '%s'", response["movie"].(map[string]interface{})["title"])
-	}
-}
-
-// Add other test functions similarly...
-
-
-
-// TestShowMovieHandler tests the showMovieHandler.
-func TestShowMovieHandler(t *testing.T) {
-	app := newTestApplication2(t)
-
-	// Insert a test movie into the database.
-	movie := &data.Movie{
-		Title:   "Test Movie",
-		Year:    2023,
-		Runtime: 120,
-		Genres:  []string{"Drama"},
-	}
-
-	err := app.models.Movies.Insert(movie)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	req := httptest.NewRequest(http.MethodGet, "/v1/movies/"+strconv.Itoa(int(movie.ID)), nil)
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(app.showMovieHandler)
-	handler.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("expected status 200 OK but got %d", rr.Code)
-	}
-
-	var response map[string]interface{}
-	err = json.NewDecoder(rr.Body).Decode(&response)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if response["movie"].(map[string]interface{})["title"] != "Test Movie" {
-		t.Errorf("expected title to be 'Test Movie' but got '%s'", response["movie"].(map[string]interface{})["title"])
-	}
-}
-
-// TestUpdateMovieHandler tests the updateMovieHandler.
-func TestUpdateMovieHandler(t *testing.T) {
-	app := newTestApplication2(t)
-
-	// Insert a test movie into the database.
-	movie := &data.Movie{
-		Title:   "Old Title",
-		Year:    2022,
-		Runtime: 100,
-		Genres:  []string{"Comedy"},
-	}
-
-	err := app.models.Movies.Insert(movie)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	updatedMovie := map[string]interface{}{
-		"title": "New Title",
-	}
-
-	body, err := json.Marshal(updatedMovie)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	req := httptest.NewRequest(http.MethodPatch, "/v1/movies/"+strconv.Itoa(int(movie.ID)), bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(app.updateMovieHandler)
-	handler.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("expected status 200 OK but got %d", rr.Code)
-	}
-
-	var response map[string]interface{}
-	err = json.NewDecoder(rr.Body).Decode(&response)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if response["movie"].(map[string]interface{})["title"] != "New Title" {
-		t.Errorf("expected title to be 'New Title' but got '%s'", response["movie"].(map[string]interface{})["title"])
-	}
-}
-
-// TestDeleteMovieHandler tests the deleteMovieHandler.
-func TestDeleteMovieHandler(t *testing.T) {
-	app := newTestApplication2(t)
-
-	// Insert a test movie into the database.
-	movie := &data.Movie{
-		Title:   "Test Movie",
-		Year:    2023,
-		Runtime: 120,
-		Genres:  []string{"Drama"},
-	}
-
-	err := app.models.Movies.Insert(movie)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	req := httptest.NewRequest(http.MethodDelete, "/v1/movies/"+strconv.Itoa(int(movie.ID)), nil)
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(app.deleteMovieHandler)
-	handler.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("expected status 200 OK but got %d", rr.Code)
-	}
-
-	var response map[string]interface{}
-	err = json.NewDecoder(rr.Body).Decode(&response)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if response["message"] != "movie successfully deleted" {
-		t.Errorf("expected message to be 'movie successfully deleted' but got '%s'", response["message"])
-	}
-}
-
-// TestListMoviesHandler tests the listMoviesHandler.
-func TestListMoviesHandler(t *testing.T) {
-	app := newTestApplication2(t)
-
-	// Insert a few test movies into the database.
-	movies := []*data.Movie{
+	testcases := []handlerTestcase{
 		{
-			Title:   "Movie 1",
-			Year:    2021,
-			Runtime: 100,
-			Genres:  []string{"Drama"},
+			name:                   "Valid movie",
+			requestUrlPath:         "/v1/movies",
+			requestBody:            `{"title":"Die Hard","year":1988,"runtime":"207 mins","genres":["Action", "Thriller"]}`,
+			wantResponseStatusCode: http.StatusCreated,
+			wantResponseHeader: map[string]string{
+				"Location": "/v1/movies/1",
+			},
+			wantResponse: movieResponse{
+				Movie: movie{
+					ID: 1, Title: "Die Hard", Year: 1988, Runtime: "207 mins",
+					Genres: []string{"Action", "Thriller"}, Version: 1,
+				},
+			},
 		},
 		{
-			Title:   "Movie 2",
-			Year:    2022,
-			Runtime: 110,
-			Genres:  []string{"Comedy"},
+			name:                   "Empty year",
+			requestUrlPath:         "/v1/movies",
+			requestBody:            `{"title":"Die Hard","runtime":"207 mins","genres":["Action", "Thriller"]}`,
+			wantResponseStatusCode: http.StatusUnprocessableEntity,
+			wantResponse: validationErrorResponse{
+				Error: map[string]string{
+					"year": "must be provided",
+				},
+			},
+		},
+		{
+			name:                   "Duplicate genre",
+			requestUrlPath:         "/v1/movies",
+			requestBody:            `{"title":"Die Hard","year":1988,"runtime":"207 mins","genres":["Action", "Action", "Thriller"]}`,
+			wantResponseStatusCode: http.StatusUnprocessableEntity,
+			wantResponse: validationErrorResponse{
+				Error: map[string]string{
+					"genres": "must not contain duplicate values",
+				},
+			},
+		},
+		{
+			name:                   "Invalid runtime format",
+			requestUrlPath:         "/v1/movies",
+			requestBody:            `{"title":"Die Hard","year":1988,"runtime":207,"genres":["Action", "Thriller"]}`,
+			wantResponseStatusCode: http.StatusBadRequest,
+			wantResponse: map[string]string{
+				"error": "invalid runtime format, example valid value 107 mins",
+			},
 		},
 	}
 
-	for _, movie := range movies {
-		err := app.models.Movies.Insert(movie)
-		if err != nil {
-			t.Fatal(err)
+	ts := newTestServer(t)
+	authToken := ts.insertUser(t, dummyUser{
+		name: "Alice", email: "alice@gmail.com", password: "pa55word1234",
+		activated: true, authenticated: true,
+		permCodes: []string{"movies:write"},
+	})
+
+	for _, tc := range testcases {
+		if tc.requestHeader == nil {
+			tc.requestHeader = make(map[string]string)
 		}
+		tc.requestHeader["Authorization"] = "Bearer " + authToken
+		tc.requestMethodType = http.MethodPost
+		testHandler(t, ts, tc)
+	}
+}
+
+func TestShowMovieHandler(t *testing.T) {
+	ts := newTestServer(t)
+	ts.insertMovie(t, "Die Hard", 1988, 207, []string{"Action", "Thriller"})
+	authToken := ts.insertUser(t, dummyUser{
+		name: "Alice", email: "alice@gmail.com", password: "pa55word1234",
+		activated: true, authenticated: true,
+		permCodes: []string{"movies:read"},
+	})
+
+	testcases := []handlerTestcase{
+		{
+			name:                   "Valid ID",
+			requestUrlPath:         "/v1/movies/1",
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: movieResponse{
+				Movie: movie{
+					ID: 1, Title: "Die Hard", Year: 1988, Runtime: "207 mins",
+					Genres: []string{"Action", "Thriller"}, Version: 1,
+				},
+			},
+		},
+		{
+			name:                   "Resource not found",
+			requestUrlPath:         "/v1/movies/2",
+			wantResponseStatusCode: http.StatusNotFound,
+			wantResponse:           notFoundResponse,
+		},
+		{
+			name:                   "Invalid ID",
+			requestUrlPath:         "/v1/movies/asad",
+			wantResponseStatusCode: http.StatusNotFound,
+			wantResponse:           notFoundResponse,
+		},
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/v1/movies", nil)
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(app.listMoviesHandler)
-	handler.ServeHTTP(rr, req)
+	for _, tc := range testcases {
+		if tc.requestHeader == nil {
+			tc.requestHeader = make(map[string]string)
+		}
+		tc.requestHeader["Authorization"] = "Bearer " + authToken
+		tc.requestMethodType = http.MethodGet
+		testHandler(t, ts, tc)
+	}
+}
 
-	if rr.Code != http.StatusOK {
-		t.Errorf("expected status 200 OK but got %d", rr.Code)
+func TestDeleteMovieHandler(t *testing.T) {
+	ts := newTestServer(t)
+	ts.insertMovie(t, "Die Hard", 1988, 207, []string{"Action", "Thriller"})
+	ts.insertMovie(t, "Titanic", 1997, 196, []string{"Romance"})
+
+	testcases := []handlerTestcase{
+		{
+			name:                   "Valid ID",
+			requestUrlPath:         "/v1/movies/1",
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: map[string]string{
+				"message": "movie successfully deleted",
+			},
+		},
+		{
+			name:                   "Resource not found",
+			requestUrlPath:         "/v1/movies/6",
+			wantResponseStatusCode: http.StatusNotFound,
+			wantResponse:           notFoundResponse,
+		},
+		{
+			name:                   "Invalid ID",
+			requestUrlPath:         "/v1/movies/1ds",
+			wantResponseStatusCode: http.StatusNotFound,
+			wantResponse:           notFoundResponse,
+		},
 	}
 
-	var response map[string]interface{}
-	err := json.NewDecoder(rr.Body).Decode(&response)
-	if err != nil {
-		t.Fatal(err)
+	authToken := ts.insertUser(t, dummyUser{
+		name: "Alice", email: "alice@gmail.com", password: "pa55word1234",
+		activated: true, authenticated: true,
+		permCodes: []string{"movies:write"},
+	})
+
+	for _, tc := range testcases {
+		if tc.requestHeader == nil {
+			tc.requestHeader = make(map[string]string)
+		}
+		tc.requestHeader["Authorization"] = "Bearer " + authToken
+		tc.requestMethodType = http.MethodDelete
+		testHandler(t, ts, tc)
+	}
+}
+
+func TestUpdateMovieHandler(t *testing.T) {
+	ts := newTestServer(t)
+	ts.insertMovie(t, "Die Hard", 1988, 207, []string{"Action", "Thriller"})
+
+	testcases := []handlerTestcase{
+		{
+			name:                   "Valid update",
+			requestUrlPath:         "/v1/movies/1",
+			requestBody:            `{"genres": ["Romance"], "year": 1997}`,
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: movieResponse{
+				Movie: movie{
+					ID: 1, Title: "Die Hard", Year: 1997, Runtime: "207 mins",
+					Genres: []string{"Romance"}, Version: 2,
+				},
+			},
+		},
+		{
+			name:                   "Empty request body",
+			requestUrlPath:         "/v1/movies/1",
+			wantResponseStatusCode: http.StatusBadRequest,
+			wantResponse: map[string]string{
+				"error": "body must not be empty",
+			},
+		},
+		{
+			name:                   "ID does not exist",
+			requestUrlPath:         "/v1/movies/5",
+			requestBody:            `{"genres": ["Romance"], "year": 1997}`,
+			wantResponseStatusCode: http.StatusNotFound,
+			wantResponse:           notFoundResponse,
+		},
+		{
+			name:                   "Badly formed JSON request",
+			requestUrlPath:         "/v1/movies/1",
+			requestBody:            `{"genres": ["Romance"], "year"- 1997}`,
+			wantResponseStatusCode: http.StatusBadRequest,
+			wantResponse: map[string]string{
+				"error": "body contains badly-formed JSON (at character 31)",
+			},
+		},
+		{
+			name:                   "Validation error",
+			requestUrlPath:         "/v1/movies/1",
+			requestBody:            `{"genres":["Romance"], "year":1997, "runtime":"207 mins", "title":""}`,
+			wantResponseStatusCode: http.StatusUnprocessableEntity,
+			wantResponse: validationErrorResponse{
+				Error: map[string]string{
+					"title": "must be provided",
+				},
+			},
+		},
 	}
 
-	moviesResponse := response["movies"].([]interface{})
-	if len(moviesResponse) != len(movies) {
-		t.Errorf("expected %d movies but got %d", len(movies), len(moviesResponse))
+	authToken := ts.insertUser(t, dummyUser{
+		name: "Alice", email: "alice@gmail.com", password: "pa55word1234",
+		activated: true, authenticated: true,
+		permCodes: []string{"movies:write"},
+	})
+
+	for _, tc := range testcases {
+		if tc.requestHeader == nil {
+			tc.requestHeader = make(map[string]string)
+		}
+		tc.requestHeader["Authorization"] = "Bearer " + authToken
+		tc.requestMethodType = http.MethodPatch
+		testHandler(t, ts, tc)
+	}
+}
+
+func TestListMoviesHandler(t *testing.T) {
+	ts := newTestServer(t)
+
+	// seed movies table with movies
+	ts.insertMovie(t, "Die Hard", 1988, 207, []string{"Action", "Thriller"})
+	ts.insertMovie(t, "Titanic", 1997, 167, []string{"Romance"})
+	ts.insertMovie(t, "Batman", 1989, 126, []string{"Action"})
+
+	dieHard := movie{
+		ID: 1, Title: "Die Hard", Year: 1988, Runtime: "207 mins",
+		Genres: []string{"Action", "Thriller"}, Version: 1,
+	}
+	titanic := movie{
+		ID: 2, Title: "Titanic", Year: 1997, Runtime: "167 mins",
+		Genres: []string{"Romance"}, Version: 1,
+	}
+	batman := movie{
+		ID: 3, Title: "Batman", Year: 1989, Runtime: "126 mins",
+		Genres: []string{"Action"}, Version: 1,
+	}
+
+	testcases := []handlerTestcase{
+		{
+			name:                   "No query parameters",
+			requestUrlPath:         "/v1/movies",
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: listMovieResponse{
+				Movies:             []movie{dieHard, titanic, batman},
+				PaginationMetadata: newPaginationMetadata(1, 20, 3),
+			},
+		},
+		{
+			name:                   "sort=-year",
+			requestUrlPath:         "/v1/movies?sort=-year",
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: listMovieResponse{
+				Movies:             []movie{titanic, batman, dieHard},
+				PaginationMetadata: newPaginationMetadata(1, 20, 3),
+			},
+		},
+		{
+			name:                   "Invalid sort key",
+			requestUrlPath:         "/v1/movies?sort=xyz",
+			wantResponseStatusCode: http.StatusUnprocessableEntity,
+			wantResponse: map[string]map[string]string{
+				"error": {"sort": "invalid sort value"},
+			},
+		},
+		{
+			name:                   "genres=Action",
+			requestUrlPath:         "/v1/movies?genres=Action",
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: listMovieResponse{
+				Movies:             []movie{dieHard, batman},
+				PaginationMetadata: newPaginationMetadata(1, 20, 2),
+			},
+		},
+		{
+			name:                   "genres=Action,Thriller",
+			requestUrlPath:         "/v1/movies?genres=Action,Thriller",
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: listMovieResponse{
+				Movies:             []movie{dieHard},
+				PaginationMetadata: newPaginationMetadata(1, 20, 1),
+			},
+		},
+		{
+			name:                   "title=Titanic genres=Romance",
+			requestUrlPath:         "/v1/movies?title=Titanic&genres=Romance",
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: listMovieResponse{
+				Movies:             []movie{titanic},
+				PaginationMetadata: newPaginationMetadata(1, 20, 1),
+			},
+		},
+		{
+			name:                   "title=die",
+			requestUrlPath:         "/v1/movies?title=die",
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: listMovieResponse{
+				Movies:             []movie{dieHard},
+				PaginationMetadata: newPaginationMetadata(1, 20, 1),
+			},
+		},
+		{
+			name:                   "page=1&page_size=2",
+			requestUrlPath:         "/v1/movies?page=1&page_size=2",
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: listMovieResponse{
+				Movies:             []movie{dieHard, titanic},
+				PaginationMetadata: newPaginationMetadata(1, 2, 3),
+			},
+		},
+		{
+			name:                   "page=2&page_size=2",
+			requestUrlPath:         "/v1/movies?page=2&page_size=2",
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: listMovieResponse{
+				Movies:             []movie{batman},
+				PaginationMetadata: newPaginationMetadata(2, 2, 3),
+			},
+		},
+		{
+			name:                   "page=3&page_size=2",
+			requestUrlPath:         "/v1/movies?page=3&page_size=2",
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: listMovieResponse{
+				Movies:             []movie{},
+				PaginationMetadata: paginationMetadata{},
+			},
+		},
+		{
+			name:                   "Empty movie list",
+			requestUrlPath:         "/v1/movies?title=Spiderman",
+			wantResponseStatusCode: http.StatusOK,
+			wantResponse: listMovieResponse{
+				Movies:             []movie{},
+				PaginationMetadata: paginationMetadata{},
+			},
+		},
+		{
+			name:                   "Non-numeric page",
+			requestUrlPath:         "/v1/movies?page=abc",
+			wantResponseStatusCode: http.StatusUnprocessableEntity,
+			wantResponse: map[string]map[string]string{
+				"error": {"page": "must be an integer value"},
+			},
+		},
+		{
+			name:                   "Out-of-bounds page_size",
+			requestUrlPath:         "/v1/movies?page_size=1000",
+			wantResponseStatusCode: http.StatusUnprocessableEntity,
+			wantResponse: map[string]map[string]string{
+				"error": {"page_size": "must be a maximum of 100"},
+			},
+		},
+	}
+
+	authToken := ts.insertUser(t, dummyUser{
+		name: "Alice", email: "alice@gmail.com", password: "pa55word1234",
+		activated: true, authenticated: true,
+		permCodes: []string{"movies:read"},
+	})
+
+	for _, tc := range testcases {
+		if tc.requestHeader == nil {
+			tc.requestHeader = make(map[string]string)
+		}
+		tc.requestHeader["Authorization"] = "Bearer " + authToken
+		tc.requestMethodType = http.MethodGet
+		testHandler(t, ts, tc)
+	}
+}
+
+func TestUnauthenticatedRequests_ShouldBeRestricted(t *testing.T) {
+	ts := newTestServer(t)
+
+	testcases := []handlerTestcase{
+		{
+			name:              "Create movie",
+			requestUrlPath:    "/v1/movies",
+			requestMethodType: http.MethodPost,
+		},
+		{
+			name:              "Show movie",
+			requestUrlPath:    "/v1/movies/1",
+			requestMethodType: http.MethodGet,
+		},
+		{
+			name:              "Update movie",
+			requestUrlPath:    "/v1/movies/1",
+			requestMethodType: http.MethodPatch,
+		},
+		{
+			name:              "Delete movie",
+			requestUrlPath:    "/v1/movies/1",
+			requestMethodType: http.MethodDelete,
+		},
+		{
+			name:              "List movies",
+			requestUrlPath:    "/v1/movies",
+			requestMethodType: http.MethodGet,
+		},
+	}
+
+	for _, tc := range testcases {
+		tc.wantResponse = errorResponse{
+			Error: "you must be authenticated to access this resource",
+		}
+		tc.wantResponseStatusCode = http.StatusUnauthorized
+		testHandler(t, ts, tc)
+	}
+}
+
+func TestNonActivatedUser_ShouldBeRestricted(t *testing.T) {
+	ts := newTestServer(t)
+	tokenNonActive := ts.insertUser(t, dummyUser{
+		name: "Alice", email: "alice@gmail.com", password: "pa55word1234", activated: false, authenticated: true,
+	})
+
+	testcases := []handlerTestcase{
+		{
+			name:              "Create movie",
+			requestUrlPath:    "/v1/movies",
+			requestMethodType: http.MethodPost,
+		},
+		{
+			name:              "Show movie",
+			requestUrlPath:    "/v1/movies/1",
+			requestMethodType: http.MethodGet,
+		},
+		{
+			name:              "Update movie",
+			requestUrlPath:    "/v1/movies/1",
+			requestMethodType: http.MethodPatch,
+		},
+		{
+			name:              "Delete movie",
+			requestUrlPath:    "/v1/movies/1",
+			requestMethodType: http.MethodDelete,
+		},
+		{
+			name:              "List movies",
+			requestUrlPath:    "/v1/movies",
+			requestMethodType: http.MethodGet,
+		},
+	}
+
+	for _, tc := range testcases {
+		tc.wantResponse = errorResponse{
+			Error: "your user account must be activated to access this resource",
+		}
+		tc.wantResponseStatusCode = http.StatusForbidden
+		if tc.requestHeader == nil {
+			tc.requestHeader = make(map[string]string)
+		}
+		tc.requestHeader["Authorization"] = "Bearer " + tokenNonActive
+		testHandler(t, ts, tc)
+	}
+}
+
+func TestUserWithoutPermissions_ShouldBeRestricted(t *testing.T) {
+	ts := newTestServer(t)
+
+	tokenWithoutReadPerm := ts.insertUser(t, dummyUser{
+		name: "Alice", email: "alice@gmail.com", password: "pa55word1234",
+		activated: true, authenticated: true,
+		permCodes: []string{"movies:write"},
+	})
+
+	tokenWithoutWritePerm := ts.insertUser(t, dummyUser{
+		name: "Bob", email: "bob@gmail.com", password: "pa55word1234",
+		activated: true, authenticated: true,
+		permCodes: []string{"movies:read"},
+	})
+
+	testcases := []handlerTestcase{
+		{
+			name:              "Create movie",
+			requestUrlPath:    "/v1/movies",
+			requestMethodType: http.MethodPost,
+			requestHeader: map[string]string{
+				"Authorization": "Bearer " + tokenWithoutWritePerm,
+			},
+		},
+		{
+			name:              "Show movie",
+			requestUrlPath:    "/v1/movies/1",
+			requestMethodType: http.MethodGet,
+			requestHeader: map[string]string{
+				"Authorization": "Bearer " + tokenWithoutReadPerm,
+			},
+		},
+		{
+			name:              "Update movie",
+			requestUrlPath:    "/v1/movies/1",
+			requestMethodType: http.MethodPatch,
+			requestHeader: map[string]string{
+				"Authorization": "Bearer " + tokenWithoutWritePerm,
+			},
+		},
+		{
+			name:              "Delete movie",
+			requestUrlPath:    "/v1/movies/1",
+			requestMethodType: http.MethodDelete,
+			requestHeader: map[string]string{
+				"Authorization": "Bearer " + tokenWithoutWritePerm,
+			},
+		},
+		{
+			name:              "List movies",
+			requestUrlPath:    "/v1/movies",
+			requestMethodType: http.MethodGet,
+			requestHeader: map[string]string{
+				"Authorization": "Bearer " + tokenWithoutReadPerm,
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		tc.wantResponse = errorResponse{
+			Error: "your user account doesn't have the necessary permissions to access this resource",
+		}
+		tc.wantResponseStatusCode = http.StatusForbidden
+		testHandler(t, ts, tc)
 	}
 }
