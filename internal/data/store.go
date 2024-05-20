@@ -2,14 +2,13 @@ package data
 
 import (
 	"errors"
-	"time"
-
 	"github.com/jackc/pgx/v5/pgxpool"
+	"time"
 )
 
 var (
-	ErrRecordNotFound2 = errors.New("record not found")
-	ErrEditConflict2   = errors.New("edit conflict")
+	ErrRecordNotFound = errors.New("record not found")
+	ErrEditConflict   = errors.New("edit conflict")
 )
 
 type MovieStoreInterface interface {

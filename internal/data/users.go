@@ -151,7 +151,7 @@ func (s UserStore) GetByEmail(email string) (*User, error) {
 	if err != nil {
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
-			return nil, ErrRecordNotFound2
+			return nil, ErrRecordNotFound
 		default:
 			return nil, err
 		}
@@ -181,7 +181,7 @@ func (s UserStore) Update(user *User) error {
 		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
 			return ErrDuplicateEmail
 		case errors.Is(err, sql.ErrNoRows):
-			return ErrEditConflict2
+			return ErrEditConflict
 		default:
 			return err
 		}
@@ -218,7 +218,7 @@ func (s UserStore) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	if err != nil {
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
-			return nil, ErrRecordNotFound2
+			return nil, ErrRecordNotFound
 		default:
 			return nil, err
 		}
