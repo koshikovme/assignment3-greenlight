@@ -3,9 +3,10 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/96malhar/greenlight/internal/data"
-	"github.com/96malhar/greenlight/internal/validator"
 	"net/http"
+
+	"github.com/koshikovme/assignment3-greenlight/internal/data"
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
 )
 
 // createMovieHandler creates a new movie record in the database.

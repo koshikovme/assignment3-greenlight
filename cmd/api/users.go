@@ -3,10 +3,11 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/96malhar/greenlight/internal/data"
-	"github.com/96malhar/greenlight/internal/validator"
 	"net/http"
 	"time"
+
+	"github.com/koshikovme/assignment3-greenlight/internal/data"
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
 )
 
 // registerUserHandler creates a new user account.

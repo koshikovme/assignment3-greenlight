@@ -1,9 +1,10 @@
 package data
 
 import (
-	"github.com/96malhar/greenlight/internal/validator"
 	"math"
 	"strings"
+
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
 )
 
 // The Filters struct contains the client-provided filters for paginated data.

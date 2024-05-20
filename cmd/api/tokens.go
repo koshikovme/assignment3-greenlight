@@ -2,10 +2,11 @@ package main
 
 import (
 	"errors"
-	"github.com/96malhar/greenlight/internal/data"
-	"github.com/96malhar/greenlight/internal/validator"
 	"net/http"
 	"time"
+
+	"github.com/koshikovme/assignment3-greenlight/internal/data"
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
 )
 
 // createAuthenticationTokenHandler creates a new authentication token for a user.

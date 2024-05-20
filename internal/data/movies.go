@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/96malhar/greenlight/internal/validator"
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"time"
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
 )
 
 type Movie struct {

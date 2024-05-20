@@ -4,16 +4,17 @@ import (
 	"errors"
 	"expvar"
 	"fmt"
-	"github.com/96malhar/greenlight/internal/data"
-	"github.com/96malhar/greenlight/internal/validator"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/tomasen/realip"
-	"golang.org/x/time/rate"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/koshikovme/assignment3-greenlight/internal/data"
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
+	"github.com/tomasen/realip"
+	"golang.org/x/time/rate"
 )
 
 // recoverPanic recovers from a panic, logs the details, and sends a 500 internal server error response.

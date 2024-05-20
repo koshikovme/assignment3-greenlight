@@ -1,9 +1,3 @@
-# github.com/96malhar/greenlight v0.0.0-20240425214058-59e9c82aee9b
-## explicit; go 1.21
-github.com/96malhar/greenlight/internal/data
-github.com/96malhar/greenlight/internal/email
-github.com/96malhar/greenlight/internal/validator
-github.com/96malhar/greenlight/internal/vcs
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
@@ -64,9 +58,13 @@ github.com/jackc/pgx/v5/stdlib
 ## explicit; go 1.19
 github.com/jackc/puddle/v2
 github.com/jackc/puddle/v2/internal/genstack
+# github.com/kr/text v0.2.0
+## explicit
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
+# github.com/rogpeppe/go-internal v1.11.0
+## explicit; go 1.19
 # github.com/spf13/cobra v1.8.0
 ## explicit; go 1.15
 github.com/spf13/cobra
@@ -112,6 +110,8 @@ golang.org/x/time/rate
 # gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc
 ## explicit
 gopkg.in/alexcesaro/quotedprintable.v3
+# gopkg.in/mail.v2 v2.3.1
+## explicit
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3

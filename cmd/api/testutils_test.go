@@ -4,10 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/golang-migrate/migrate/v4/database/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
-	"golang.org/x/crypto/bcrypt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -16,10 +12,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/96malhar/greenlight/internal/data"
+	"github.com/golang-migrate/migrate/v4/database/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
+	"github.com/koshikovme/assignment3-greenlight/internal/data"
 	"github.com/stretchr/testify/require"
 )
 

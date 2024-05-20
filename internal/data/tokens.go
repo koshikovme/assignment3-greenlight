@@ -5,9 +5,10 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base32"
-	"github.com/96malhar/greenlight/internal/validator"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
 )
 
 const (

@@ -5,16 +5,17 @@ import (
 	"expvar"
 	"flag"
 	"fmt"
-	"github.com/96malhar/greenlight/internal/data"
-	"github.com/96malhar/greenlight/internal/email"
-	"github.com/96malhar/greenlight/internal/vcs"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"os"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/koshikovme/assignment3-greenlight/internal/data"
+	"github.com/koshikovme/assignment3-greenlight/internal/email"
+	"github.com/koshikovme/assignment3-greenlight/internal/vcs"
 )
 
 var version = vcs.Version()
