@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/saalikmubeen/greenlight/internal/data"
-	"github.com/saalikmubeen/greenlight/internal/validator"
+	"github.com/koshikovme/assignment3-greenlight/internal/data"
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
 )
 
 // Endpoint for generating and sending activation tokens to your users.

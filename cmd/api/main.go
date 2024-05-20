@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/saalikmubeen/greenlight/internal/data"
-	"github.com/saalikmubeen/greenlight/internal/jsonlog"
-	"github.com/saalikmubeen/greenlight/internal/mailer"
-	"github.com/saalikmubeen/greenlight/internal/vcs"
+	"github.com/koshikovme/assignment3-greenlight/internal/data"
+	"github.com/koshikovme/assignment3-greenlight/internal/jsonlog"
+	"github.com/koshikovme/assignment3-greenlight/internal/mailer"
+	"github.com/koshikovme/assignment3-greenlight/internal/vcs"
 
 	// Import the pq driver so that it can register itself with the database/sql
 	// package. Note that we alias this import to the blank identifier, to stop the Go

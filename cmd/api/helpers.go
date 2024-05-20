@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/saalikmubeen/greenlight/internal/validator"
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
 )
 
 // Define an envelope type.

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/saalikmubeen/greenlight/internal/data"
-	"github.com/saalikmubeen/greenlight/internal/validator"
+	"github.com/koshikovme/assignment3-greenlight/internal/data"
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
 )
 
 // createMovieHandler handles the "POST /v1/movies" endpoint and returns a JSON response of

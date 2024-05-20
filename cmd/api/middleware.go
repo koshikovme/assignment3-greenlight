@@ -14,8 +14,8 @@ import (
 	"github.com/tomasen/realip"
 	"golang.org/x/time/rate"
 
-	"github.com/saalikmubeen/greenlight/internal/data"
-	"github.com/saalikmubeen/greenlight/internal/validator"
+	"github.com/koshikovme/assignment3-greenlight/internal/data"
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
 )
 
 /* Any panics in our API handlers will be recovered automatically by Go’s http.Server.

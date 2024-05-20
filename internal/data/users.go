@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/saalikmubeen/greenlight/internal/validator"
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
 	"golang.org/x/crypto/bcrypt"
 )
 

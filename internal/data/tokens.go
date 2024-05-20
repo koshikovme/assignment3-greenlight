@@ -9,7 +9,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/saalikmubeen/greenlight/internal/validator"
+	"github.com/koshikovme/assignment3-greenlight/internal/validator"
 )
 
 // ScopeActivation defines the scope of the token:
